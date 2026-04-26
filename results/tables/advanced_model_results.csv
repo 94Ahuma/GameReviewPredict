@@ -1,0 +1,7 @@
+Model,Train,Test,Accuracy,F1_macro,Precision_macro,Recall_macro
+LogisticRegression,BG3,BG3,0.8912,0.875,0.8946,0.8621
+LogisticRegression,BG3,AnimalCrossing,0.8349,0.8203,0.8332,0.8128
+NaiveBayes,BG3,BG3,0.8841,0.8636,0.899,0.8449
+NaiveBayes,BG3,AnimalCrossing,0.7973,0.7596,0.8372,0.7455
+LinearSVM,BG3,BG3,0.8953,0.8828,0.8884,0.8781
+LinearSVM,BG3,AnimalCrossing,0.8147,0.8,0.808,0.7947
