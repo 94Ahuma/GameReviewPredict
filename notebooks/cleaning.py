@@ -76,12 +76,19 @@ if __name__ == "__main__":
     print("Loading data...")
     bg3 = pd.read_csv("../data/raw/BG3_reviews_updated.csv")
     animal = pd.read_csv("../data/raw/animal_crossing_reviews.csv")
-
+    stardew = pd.read_csv("../data/raw/stardew_valley_reviews.csv")
+    divinity = pd.read_csv("../data/raw/Divinity_Original_Sin_2_reviews.csv")
     print("Processing BG3 with advanced NLP...")
     bg3_clean = advanced_clean_process(bg3)
 
     print("Processing Animal Crossing with advanced NLP...")
     animal_clean = advanced_clean_process(animal)
+
+    print("Processing Stardew Valley with advanced NLP...")
+    stardew_clean = advanced_clean_process(stardew)
+
+    print("Processing Divinity Original Sin 2 with advanced NLP...")
+    divinity_clean = advanced_clean_process(divinity)
 
     #Data balancing
     bg3_sample = pd.concat([
@@ -92,4 +99,6 @@ if __name__ == "__main__":
     #Save in local
     bg3_sample.to_csv("../data/processed/BG3_reviews_clean_v2.csv", index=False)
     animal_clean.to_csv("../data/processed/animal_crossing_reviews_clean_v2.csv", index=False)
+    stardew_clean.to_csv("../data/processed/stardew_valley_reviews_clean_v2.csv", index=False)
+    divinity_clean.to_csv("../data/processed/Divinity_Original_Sin_2_reviews_clean_v2.csv", index=False)
     print("Files saved to processed folder.")

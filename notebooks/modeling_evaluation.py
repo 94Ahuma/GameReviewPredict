@@ -20,6 +20,8 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 bg3 = pd.read_csv(DATA_DIR / "BG3_reviews_clean_v2.csv")
 animal = pd.read_csv(DATA_DIR / "animal_crossing_reviews_clean_v2.csv")
+stardew = pd.read_csv(DATA_DIR / "stardew_valley_reviews_clean_v2.csv")
+divinity = pd.read_csv(DATA_DIR / "Divinity_Original_Sin_2_reviews_clean_v2.csv")
 
 def get_pipeline(model_type):
     preprocessor = ColumnTransformer(
@@ -107,17 +109,29 @@ for name, pipe in models_to_test.items():
     #test in game style(BG3 -> BG3)
     preds_self = pipe.predict(test_bg3)
     results.append(evaluate(test_bg3["label"], preds_self, name, "BG3", "BG3"))
-
     print(f"\n[{name}] BG3 → BG3 Classification Report:")
     print(classification_report(test_bg3["label"], preds_self,
+                                target_names=["Negative", "Positive"]))
+
+    # test in same game style(BG3 -> Divinity Original Sin 2)
+    preds_divinity = pipe.predict(divinity)
+    results.append(evaluate(divinity["label"], preds_divinity, name, "BG3", "Divinity2"))
+    print(f"[{name}] BG3 → Divinity Original Sin 2 (Same Genre - RPG) Classification Report:")
+    print(classification_report(divinity["label"], preds_divinity,
                                 target_names=["Negative", "Positive"]))
 
     #test in different game style(BG3 -> Animal Crossing)
     preds_cross = pipe.predict(animal)
     results.append(evaluate(animal["label"], preds_cross, name, "BG3", "AnimalCrossing"))
-
     print(f"[{name}] BG3 → Animal Crossing Classification Report:")
     print(classification_report(animal["label"], preds_cross,
+                                target_names=["Negative", "Positive"]))
+
+    # test in different game style(BG3 -> Stardew Valley)
+    preds_stardew = pipe.predict(stardew)
+    results.append(evaluate(stardew["label"], preds_stardew, name, "BG3", "StardewValley"))
+    print(f"[{name}] BG3 → Stardew Valley Classification Report:")
+    print(classification_report(stardew["label"], preds_stardew,
                                 target_names=["Negative", "Positive"]))
 
 #ouput

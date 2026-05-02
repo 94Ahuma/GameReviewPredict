@@ -9,6 +9,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LogisticRegression
 #Theme modeling
 from bertopic import BERTopic
 
@@ -20,7 +21,8 @@ FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 print("Loading cleaned data...")
 bg3 = pd.read_csv(DATA_DIR / "BG3_reviews_clean_v2.csv").dropna(subset=["cleaned_review", "review"])
 animal = pd.read_csv(DATA_DIR / "animal_crossing_reviews_clean_v2.csv").dropna(subset=["cleaned_review", "review"])
-
+stardew  = pd.read_csv(DATA_DIR / "stardew_valley_reviews_clean_v2.csv").dropna(subset=["cleaned_review", "review"])
+divinity = pd.read_csv(DATA_DIR / "Divinity_Original_Sin_2_reviews_clean_v2.csv").dropna(subset=["cleaned_review", "review"])
 
 #Steam UI Noise Word Blacklist
 STEAM_UI_NOISE = {
@@ -29,13 +31,26 @@ STEAM_UI_NOISE = {
     "hours", "record", "early", "access", "review"
 }
 
-
 # ==========================================
 #Cross game style prediction confusion matrix
 # ==========================================
-def plot_real_confusion_matrix():
-    print("Training a real SVM model to generate cross game style confusion matrices...")
+def plot_confusion_matrix_single(pipeline, test_df, test_name, filename):
+    y_pred = pipeline.predict(test_df)
+    cm = confusion_matrix(test_df["label"], y_pred, labels=[1, 0])
+    plt.figure(figsize=(7, 6))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
+                xticklabels=["Positive (Predicted)", "Negative (Predicted)"],
+                yticklabels=["Positive (Actual)", "Negative (Actual)"])
+    plt.title(f"Confusion Matrix: BG3 Model → {test_name}\n"
+              f"(Top-left = TP: correctly predicted positive)", fontsize=11)
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / filename, dpi=300)
+    plt.close()
+    print(f"Saved：{filename}")
 
+
+def plot_all_confusion_matrices():
+    print("Training LR model for confusion matrices...")
     preprocessor = ColumnTransformer(
         transformers=[
             ('text', TfidfVectorizer(max_features=5000, ngram_range=(1, 2)), 'cleaned_review'),
@@ -44,29 +59,13 @@ def plot_real_confusion_matrix():
     )
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
-        ('classifier', LinearSVC(C=1.0, max_iter=2000))
+        ('classifier', LogisticRegression(max_iter=1000))
     ])
-
     pipeline.fit(bg3, bg3["label"])
-    y_pred = pipeline.predict(animal)
 
-    cm = confusion_matrix(animal["label"], y_pred, labels=[1, 0])
-
-    plt.figure(figsize=(7, 6))
-    sns.heatmap(
-        cm,
-        annot=True,
-        fmt="d",
-        cmap="Blues",
-        xticklabels=["Positive (Predicted)", "Negative (Predicted)"],
-        yticklabels=["Positive (Actual)", "Negative (Actual)"]
-    )
-    plt.title("Confusion Matrix: BG3 Model → Animal Crossing\n"
-              "(Top-left = TP: correctly predicted positive)", fontsize=11)
-    plt.tight_layout()
-    plt.savefig(FIGURES_DIR / "CrossDomain_Real_CM.png", dpi=300)
-    plt.close()
-    print("Saved：CrossDomain_Real_CM.png")
+    plot_confusion_matrix_single(pipeline, animal,   "Animal Crossing (Different Genre)",  "CM_BG3_AnimalCrossing.png")
+    plot_confusion_matrix_single(pipeline, divinity, "Divinity Original Sin 2 (Same Genre - RPG)", "CM_BG3_Divinity2.png")
+    plot_confusion_matrix_single(pipeline, stardew,  "Stardew Valley (Different Genre)",   "CM_BG3_StardewValley.png")
 
 #BERTopic
 def run_fixed_topic_modeling(df, title, filename):
@@ -125,13 +124,14 @@ def show_sample_classifications():
 def plot_vader_distribution():
     print("\nGenerating VADER Score distribution map...")
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    datasets = [("Baldur's Gate 3", bg3), ("Animal Crossing", animal)]
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    axes = axes.flatten()
+    datasets = [("Baldur's Gate 3", bg3), ("Animal Crossing", animal), ("Divinity Original Sin 2", divinity),
+        ("Stardew Valley", stardew),]
 
     for ax, (title, df) in zip(axes, datasets):
         pos = df[df["label"] == 1]["vader_score"]
         neg = df[df["label"] == 0]["vader_score"]
-
         ax.hist(neg, bins=40, alpha=0.6, color="#E05C5C", label=f"Negative (n={len(neg)})")
         ax.hist(pos, bins=40, alpha=0.6, color="#5B8FD4", label=f"Positive (n={len(pos)})")
         ax.axvline(pos.mean(), color="#2962A8", linestyle="--",
@@ -158,9 +158,13 @@ def plot_vader_distribution():
 
 
 if __name__ == "__main__":
-    plot_real_confusion_matrix()
+    plot_all_confusion_matrices()
+
     run_fixed_topic_modeling(bg3, "Baldur's Gate 3", "BG3_Topics_Fixed.html")
     run_fixed_topic_modeling(animal, "Animal Crossing", "Animal_Topics_Fixed.html")
+    run_fixed_topic_modeling(divinity, "Divinity Original Sin 2", "Divinity_Topics_Fixed.html")
+    run_fixed_topic_modeling(stardew, "Stardew Valley", "Stardew_Topics_Fixed.html")
+
     show_sample_classifications()
     plot_vader_distribution()
     print("\nAll visual outputs completed, check the results/figures folder.")
